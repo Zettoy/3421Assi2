@@ -3,12 +3,16 @@ package unsw.graphics.world;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import com.jogamp.newt.event.MouseEvent;
+import com.jogamp.newt.event.MouseListener;
+import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL3;
 
 import unsw.graphics.Application3D;
+import unsw.graphics.CoordFrame3D;
 import unsw.graphics.Matrix4;
 import unsw.graphics.Shader;
-
+import unsw.graphics.geometry.Point2D;
 
 
 /**
@@ -17,13 +21,13 @@ import unsw.graphics.Shader;
  * @author malcolmr
  */
 public class World extends Application3D {
-
     private Terrain terrain;
+    private Camera camera;
 
     public World(Terrain terrain) {
     	super("Assignment 2", 800, 600);
         this.terrain = terrain;
-   
+        camera = new Camera(terrain);
     }
    
     /**
@@ -40,7 +44,8 @@ public class World extends Application3D {
 
 	@Override
 	public void display(GL3 gl) {
-		super.display(gl);
+    	super.display(gl);
+    	terrain.draw(gl, camera.getView());
 	}
 
 	@Override
@@ -52,8 +57,9 @@ public class World extends Application3D {
 	@Override
 	public void init(GL3 gl) {
 		super.init(gl);
-		
-		
+		terrain.init(gl);
+
+        getWindow().addKeyListener(camera);
 	}
 
 	@Override
