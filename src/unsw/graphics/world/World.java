@@ -23,6 +23,7 @@ import unsw.graphics.geometry.Point2D;
 public class World extends Application3D {
     private Terrain terrain;
     private Camera camera;
+    private int rotateY;
 
     public World(Terrain terrain) {
     	super("Assignment 2", 800, 600);
@@ -45,7 +46,8 @@ public class World extends Application3D {
 	@Override
 	public void display(GL3 gl) {
     	super.display(gl);
-    	terrain.draw(gl, camera.getView());
+		camera.setView(gl);
+    	terrain.draw(gl);
 	}
 
 	@Override

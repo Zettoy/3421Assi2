@@ -34,6 +34,8 @@ public class Terrain {
     private TriangleMesh mesh;
     private Texture texture;
 
+    private Avatar avatar;
+
     /**
      * Create a new terrain
      *
@@ -194,16 +196,19 @@ public class Terrain {
         texture = new Texture(gl, "res/textures/grass.bmp", "bmp", true);
 
         Shader shader = new Shader(gl, "shaders/vertex_tex_phong.glsl",
-                "shaders/fragment_tex_phong.glsl");
+                "shaders/fragment_tex_phong_directional_light.glsl");
         shader.use(gl);
 
         mesh = new TriangleMesh(points, indices, true, textCoords);
         mesh.init(gl);
 
         for (Tree t : trees) t.init(gl);
+
+        avatar = new Avatar(0, -3, 0);
+        avatar.init(gl);
     }
 
-    public void draw(GL3 gl, CoordFrame3D view) {
+    public void draw(GL3 gl) {
         Shader.setInt(gl, "tex", 0);
 
         gl.glActiveTexture(GL.GL_TEXTURE0);
@@ -211,12 +216,8 @@ public class Terrain {
 
         Shader.setPenColor(gl, Color.WHITE);
 
-        /*
-         * Lighting parameter reference:
-         * src/unsw.graphics/examples/modelViewer.java, line 132 ~ 140
-         * Will be changed later
-         */
-        Shader.setPoint3D(gl, "lightPos", new Point3D(0, 0, 5));
+        Shader.setPoint3D(gl, "lightDir",
+                new Point3D(-1, 1, 0));
         Shader.setColor(gl, "lightIntensity", Color.WHITE);
         Shader.setColor(gl, "ambientIntensity", new Color(0.2f, 0.2f, 0.2f));
 
@@ -226,8 +227,16 @@ public class Terrain {
         Shader.setColor(gl, "specularCoeff", new Color(0.8f, 0.8f, 0.8f));
         Shader.setFloat(gl, "phongExp", 16f);
 
+        CoordFrame3D view = CoordFrame3D.identity().translate(0, -3, 0);
+
         mesh.draw(gl, view);
 
         for (Tree t : trees) t.draw(gl, view);
+
+        avatar.draw(gl);
+    }
+
+    public Avatar getAvatar() {
+        return avatar;
     }
 }
