@@ -98,7 +98,7 @@ public class Terrain {
         altitudes[x][z] = h;
     }
 
-    /**
+     /**
      * Get the altitude at an arbitrary point. 
      * Non-integer points should be interpolated from neighbouring grid points
      * 
@@ -156,6 +156,7 @@ public class Terrain {
      */
     public void addRoad(float width, List<Point2D> spine) {
         Road road = new Road(width, spine);
+        road.setTerrain(this);
         roads.add(road);        
     }
 
@@ -217,7 +218,7 @@ public class Terrain {
         Shader.setPenColor(gl, Color.WHITE);
 
         Shader.setPoint3D(gl, "lightDir",
-                new Point3D(-1, 1, 0));
+                new Point3D(sunlight.getX(), sunlight.getY(), sunlight.getZ()));
         Shader.setColor(gl, "lightIntensity", Color.WHITE);
         Shader.setColor(gl, "ambientIntensity", new Color(0.2f, 0.2f, 0.2f));
 
@@ -234,6 +235,8 @@ public class Terrain {
         for (Tree t : trees) t.draw(gl, view);
 
         avatar.draw(gl);
+
+        for (Road r : roads) r.draw(gl, view);
     }
 
     public Avatar getAvatar() {

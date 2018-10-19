@@ -1,8 +1,15 @@
 package unsw.graphics.world;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.jogamp.opengl.GL;
+import com.jogamp.opengl.GL3;
+import unsw.graphics.*;
 import unsw.graphics.geometry.Point2D;
+import unsw.graphics.geometry.Point3D;
+import unsw.graphics.geometry.Triangle3D;
+import unsw.graphics.scene.MathUtil;
 
 /**
  * COMMENT: Comment Road 
@@ -13,6 +20,9 @@ public class Road {
 
     private List<Point2D> points;
     private float width;
+    private Terrain terrain;
+
+    private int segments = 100;
     
     /**
      * Create a new road with the specified spine 
@@ -23,6 +33,71 @@ public class Road {
     public Road(float width, List<Point2D> spine) {
         this.width = width;
         this.points = spine;
+    }
+
+    public void draw(GL3 gl, CoordFrame3D frame) {
+        Texture texture = new Texture(gl, "res/textures/rock.bmp", "bmp", true);
+
+        gl.glActiveTexture(GL.GL_TEXTURE0);
+        gl.glBindTexture(GL.GL_TEXTURE_2D, texture.getId());
+
+        float dt = 1.0f/segments;
+        float y = terrain.altitude(points.get(0).getX(), points.get(0).getY()) + 0.01f;
+
+        for (int n = 0; n < size(); n ++) {
+            List<float[]> normals = new ArrayList<>();
+            for (int i = 0; i < segments; i++) {
+                float fstT = i * dt;
+                float sndT = (i + 1) * dt;
+
+                if (i == segments - 1) {
+                    fstT = i * dt;
+                    sndT = (i - 1) * dt;
+                }
+
+                Point2D fstPoint = point(fstT + n);
+                Point2D sndPoint = point(sndT + n);
+
+                float[] fstToSnd = {
+                        sndPoint.getX() - fstPoint.getX(), 0, sndPoint.getY() - fstPoint.getY(), 1};
+
+                float[] normal = MathUtil.getUnitVector(MathUtil.crossProduct(new float[]{0, 1, 0, 1}, fstToSnd));
+                normal = MathUtil.multiply(MathUtil.scaleMatrix(width / 2), normal);
+
+                normals.add(normal);
+            }
+
+            for (int i = 0; i < segments - 1; i++) {
+                float fstT = i * dt;
+                float sndT = (i + 1) * dt;
+                Point2D fstPoint = point(fstT + n);
+                Point2D sndPoint = point(sndT + n);
+
+                Point3D fstLeft = new Point3D(
+                        fstPoint.getX() - normals.get(i)[0], y, fstPoint.getY() - normals.get(i)[2]);
+                Point3D fstRight = new Point3D(
+                        fstPoint.getX() + normals.get(i)[0], y, fstPoint.getY() + normals.get(i)[2]);
+                Point3D sndLeft = new Point3D(
+                        sndPoint.getX() - normals.get(i + 1)[0], y, sndPoint.getY() - normals.get(i + 1)[2]);
+                Point3D sndRight = new Point3D(
+                        sndPoint.getX() + normals.get(i + 1)[0], y, sndPoint.getY() + normals.get(i + 1)[2]);
+
+                Triangle3D bottomRight = new Triangle3D(
+                        fstLeft.getX(), fstLeft.getY(), fstLeft.getZ(),
+                        sndRight.getX(), sndRight.getY(), sndRight.getZ(),
+                        fstRight.getX(), fstRight.getY(), fstRight.getZ()
+                );
+
+                Triangle3D topLeft = new Triangle3D(
+                        fstLeft.getX(), fstLeft.getY(), fstLeft.getZ(),
+                        sndLeft.getX(), sndLeft.getY(), sndLeft.getZ(),
+                        sndRight.getX(), sndRight.getY(), sndRight.getZ()
+                );
+
+                bottomRight.draw(gl, frame);
+                topLeft.draw(gl, frame);
+            }
+        }
     }
 
     /**
@@ -40,7 +115,7 @@ public class Road {
      * @return
      */
     public int size() {
-        return points.size() / 6;
+        return points.size() / 3;
     }
 
     /**
@@ -106,5 +181,7 @@ public class Road {
         throw new IllegalArgumentException("" + i);
     }
 
-
+    public void setTerrain(Terrain terrain) {
+        this.terrain = terrain;
+    }
 }
