@@ -9,13 +9,11 @@ import java.util.List;
 
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL3;
-import unsw.graphics.CoordFrame3D;
-import unsw.graphics.Shader;
-import unsw.graphics.Texture;
-import unsw.graphics.Vector3;
+import unsw.graphics.*;
 import unsw.graphics.geometry.Point2D;
 import unsw.graphics.geometry.Point3D;
 import unsw.graphics.geometry.TriangleMesh;
+import unsw.graphics.scene.MathUtil;
 
 
 /**
@@ -30,11 +28,20 @@ public class Terrain {
     private List<Tree> trees;
     private List<Road> roads;
     private Vector3 sunlight;
+    private Vector3 torchlight;
 
     private TriangleMesh mesh;
     private Texture texture;
 
     private Avatar avatar;
+    private Sun sun;
+
+    private boolean thirdPerson;
+    private boolean nightMode;
+    private boolean sunMode;
+
+    private boolean sunRise;
+    private float sunAltitude;
 
     /**
      * Create a new terrain
@@ -74,6 +81,10 @@ public class Terrain {
      */
     public void setSunlightDir(float dx, float dy, float dz) {
         sunlight = new Vector3(dx, dy, dz);      
+    }
+
+    public void setTorchlightDir(float dx, float dy, float dz) {
+        torchlight = new Vector3(dx, dy, dz);
     }
 
     /**
@@ -147,7 +158,6 @@ public class Terrain {
         trees.add(tree);
     }
 
-
     /**
      * Add a road. 
      * 
@@ -166,6 +176,19 @@ public class Terrain {
 
     public float getWidth() {
         return width;
+    }
+
+    public void setNightMode(boolean nightMode) {
+        this.nightMode = nightMode;
+    }
+
+    public void setSunMode(boolean sunMode) {
+        this.sunMode = sunMode;
+        if (sunMode) setSunlightDir(-6, 0, 0);
+    }
+
+    public void setThirdPerson(boolean thirdPerson) {
+        this.thirdPerson = thirdPerson;
     }
 
     public void init(GL3 gl) {
@@ -197,7 +220,8 @@ public class Terrain {
         texture = new Texture(gl, "res/textures/grass.bmp", "bmp", true);
 
         Shader shader = new Shader(gl, "shaders/vertex_tex_phong.glsl",
-                "shaders/fragment_tex_phong_directional_light.glsl");
+                "shaders/fragment_tex_phong_assignment2.glsl");
+                //"shaders/fragment_tex_phong.glsl");
         shader.use(gl);
 
         mesh = new TriangleMesh(points, indices, true, textCoords);
@@ -205,8 +229,15 @@ public class Terrain {
 
         for (Tree t : trees) t.init(gl);
 
+        for (Road r : roads) r.init(gl);
+
         avatar = new Avatar(0, -3, 0);
         avatar.init(gl);
+
+        if (sunMode) setSunlightDir(-6, 0, 0);
+
+        sun = new Sun(-6, 0, 0);
+        sun.init(gl);
     }
 
     public void draw(GL3 gl) {
@@ -219,24 +250,54 @@ public class Terrain {
 
         Shader.setPoint3D(gl, "lightDir",
                 new Point3D(sunlight.getX(), sunlight.getY(), sunlight.getZ()));
-        Shader.setColor(gl, "lightIntensity", Color.WHITE);
         Shader.setColor(gl, "ambientIntensity", new Color(0.2f, 0.2f, 0.2f));
 
-        // Set the material properties
+        if (nightMode) {
+            Shader.setColor(gl, "lightIntensity", new Color(0.2f, 0.2f, 0.2f));
+            Shader.setInt(gl, "nightMode", 1);
+            Shader.setPoint3D(gl, "torchlightPos",
+                    new Point3D(torchlight.getX(), torchlight.getY(), torchlight.getZ()));
+            Shader.setColor(gl, "torchlightIntensity", Color.WHITE);
+            Shader.setFloat(gl, "torchlightAngle", 5f);
+            Shader.setFloat(gl, "attenuation", 0.05f);
+
+        } else {
+            Shader.setColor(gl, "lightIntensity", new Color(1f, 1f, 1f));
+            Shader.setInt(gl, "nightMode", 0);
+        }
+
         Shader.setColor(gl, "ambientCoeff", Color.WHITE);
         Shader.setColor(gl, "diffuseCoeff", new Color(0.5f, 0.5f, 0.5f));
         Shader.setColor(gl, "specularCoeff", new Color(0.8f, 0.8f, 0.8f));
         Shader.setFloat(gl, "phongExp", 16f);
 
-        CoordFrame3D view = CoordFrame3D.identity().translate(0, -3, 0);
+        CoordFrame3D view = CoordFrame3D.identity().translate(0, -3, 0);//.scale(10, 10, 10);
 
         mesh.draw(gl, view);
 
         for (Tree t : trees) t.draw(gl, view);
 
-        avatar.draw(gl);
+        if (thirdPerson) avatar.draw(gl);
 
         for (Road r : roads) r.draw(gl, view);
+
+        if (!sunMode) return;
+        sun.draw(gl, view);
+
+        if (sunAltitude <= 0 || sunAltitude >= 6) sunRise = !sunRise;
+        if (sunRise) {
+            sunAltitude += 0.1;
+        } else {
+            sunAltitude -= 0.1;
+        }
+
+        if (sunAltitude < 0) {
+            setSunlightDir(-6, 0, 0);
+            sun.setPosition(-6, 0, 0);
+        } else {
+            setSunlightDir(sunlight.getX() + 0.17f, sunAltitude, sunlight.getZ());
+            sun.setPosition(sunlight.getX(), sunAltitude, sunlight.getZ());
+        }
     }
 
     public Avatar getAvatar() {

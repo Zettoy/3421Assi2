@@ -14,6 +14,8 @@ public class Camera implements KeyListener {
     private float rotate;
 
     private boolean thirdPesron;
+    private boolean nightMode;
+    private boolean sunMode;
 
     public Camera(Terrain terrain) {
         this.terrain = terrain;
@@ -31,14 +33,21 @@ public class Camera implements KeyListener {
         }
 
         CoordFrame3D view = CoordFrame3D.identity().rotateX(12)
-                //.rotateX(90).translate(0, -10, 10)
+                .rotateX(78).translate(0, -10, 10)
                 .rotateY(-rotate).translate(-tempX, -y, -tempZ);
         Shader.setViewMatrix(gl, view.getMatrix());
 
         CoordFrame3D avatarView = CoordFrame3D.identity()
                 .translate(x, y, z)
                 .rotateY(rotate);
-        terrain.getAvatar().setView(avatarView);
+
+        if (thirdPesron) terrain.getAvatar().setView(avatarView);
+
+        if (nightMode) {
+            float[] s = avatarView.getMatrix().getValues();
+            terrain.setTorchlightDir(s[12], s[13] - 1, s[14]);
+        }
+
     }
 
     @Override
@@ -60,6 +69,15 @@ public class Camera implements KeyListener {
                 break;
             case KeyEvent.VK_SPACE:
                 thirdPesron = !thirdPesron;
+                terrain.setThirdPerson(thirdPesron);
+                break;
+            case KeyEvent.VK_N:
+                nightMode = !nightMode;
+                terrain.setNightMode(nightMode);
+                break;
+            case KeyEvent.VK_S:
+                sunMode = !sunMode;
+                terrain.setSunMode(sunMode);
                 break;
         }
     }

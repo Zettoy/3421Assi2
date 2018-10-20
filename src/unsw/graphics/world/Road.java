@@ -8,8 +8,7 @@ import com.jogamp.opengl.GL3;
 import unsw.graphics.*;
 import unsw.graphics.geometry.Point2D;
 import unsw.graphics.geometry.Point3D;
-import unsw.graphics.geometry.Triangle3D;
-import unsw.graphics.scene.MathUtil;
+import unsw.graphics.geometry.TriangleMesh;
 
 /**
  * COMMENT: Comment Road 
@@ -17,12 +16,15 @@ import unsw.graphics.scene.MathUtil;
  * @author malcolmr
  */
 public class Road {
+    private static final int SEGMENTS = 100;
+
+    private TriangleMesh mesh;
 
     private List<Point2D> points;
     private float width;
     private Terrain terrain;
 
-    private int segments = 100;
+    private Texture texture;
     
     /**
      * Create a new road with the specified spine 
@@ -35,69 +37,89 @@ public class Road {
         this.points = spine;
     }
 
-    public void draw(GL3 gl, CoordFrame3D frame) {
-        Texture texture = new Texture(gl, "res/textures/rock.bmp", "bmp", true);
+    public void init(GL3 gl) {
+        List<Point3D> points = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>();
+        List<Point2D> textCoords = new ArrayList<>();
 
-        gl.glActiveTexture(GL.GL_TEXTURE0);
-        gl.glBindTexture(GL.GL_TEXTURE_2D, texture.getId());
-
-        float dt = 1.0f/segments;
-        float y = terrain.altitude(points.get(0).getX(), points.get(0).getY()) + 0.01f;
+        float dt = 1.0f/ SEGMENTS;
+        float y = terrain.altitude(this.points.get(0).getX(), this.points.get(0).getY()) + 0.01f;
 
         for (int n = 0; n < size(); n ++) {
-            List<float[]> normals = new ArrayList<>();
-            for (int i = 0; i < segments; i++) {
-                float fstT = i * dt;
-                float sndT = (i + 1) * dt;
+            List<Vector3> normals = new ArrayList<>();
+            for (int i = 0; i <= SEGMENTS; i++) {
+                float fstT = i * dt + n;
+                float sndT = (i + 1) * dt + n;
 
-                if (i == segments - 1) {
-                    fstT = i * dt;
-                    sndT = (i - 1) * dt;
+                if (i == SEGMENTS - 1) {
+                    fstT = i * dt + n;
+                    sndT = (i - 1) * dt + n;
                 }
 
-                Point2D fstPoint = point(fstT + n);
-                Point2D sndPoint = point(sndT + n);
+                Point2D fstPoint, sndPoint;
+                if (i == SEGMENTS) {
+                    fstPoint = this.points.get(3 * (n + 1));
+                    sndPoint = point((i - 1) * dt + n);
 
-                float[] fstToSnd = {
-                        sndPoint.getX() - fstPoint.getX(), 0, sndPoint.getY() - fstPoint.getY(), 1};
+                } else {
+                    fstPoint = point(fstT);
+                    sndPoint = point(sndT);
+                }
 
-                float[] normal = MathUtil.getUnitVector(MathUtil.crossProduct(new float[]{0, 1, 0, 1}, fstToSnd));
-                normal = MathUtil.multiply(MathUtil.scaleMatrix(width / 2), normal);
+                Vector3 fstToSnd = new Vector3(sndPoint.getX() - fstPoint.getX(), 0, sndPoint.getY() - fstPoint.getY());
+                Vector3 normal = new Vector3(0, 1, 0).cross(fstToSnd).normalize();
+                Matrix4 scale = Matrix4.scale(width / 2, width / 2, width / 2);
+                normal = scale.multiply(new Vector4(normal.getX(), normal.getY(), normal.getZ(), 1f)).trim();
 
+                if (i >= SEGMENTS - 1) normal = normal.negate();
                 normals.add(normal);
             }
 
-            for (int i = 0; i < segments - 1; i++) {
-                float fstT = i * dt;
-                float sndT = (i + 1) * dt;
-                Point2D fstPoint = point(fstT + n);
-                Point2D sndPoint = point(sndT + n);
+            for (int i = 0; i <= SEGMENTS; i++) {
+                float fstT = i * dt + n;
+                Point2D fstPoint;
+
+                if (i == SEGMENTS) {
+                    fstPoint = this.points.get(3 * (n + 1));
+                } else {
+                    fstPoint = point(fstT);
+                }
 
                 Point3D fstLeft = new Point3D(
-                        fstPoint.getX() - normals.get(i)[0], y, fstPoint.getY() - normals.get(i)[2]);
+                        fstPoint.getX() - normals.get(i).getX(), y, fstPoint.getY() - normals.get(i).getZ());
                 Point3D fstRight = new Point3D(
-                        fstPoint.getX() + normals.get(i)[0], y, fstPoint.getY() + normals.get(i)[2]);
-                Point3D sndLeft = new Point3D(
-                        sndPoint.getX() - normals.get(i + 1)[0], y, sndPoint.getY() - normals.get(i + 1)[2]);
-                Point3D sndRight = new Point3D(
-                        sndPoint.getX() + normals.get(i + 1)[0], y, sndPoint.getY() + normals.get(i + 1)[2]);
+                        fstPoint.getX() + normals.get(i).getX(), y, fstPoint.getY() + normals.get(i).getZ());
 
-                Triangle3D bottomRight = new Triangle3D(
-                        fstLeft.getX(), fstLeft.getY(), fstLeft.getZ(),
-                        sndRight.getX(), sndRight.getY(), sndRight.getZ(),
-                        fstRight.getX(), fstRight.getY(), fstRight.getZ()
-                );
-
-                Triangle3D topLeft = new Triangle3D(
-                        fstLeft.getX(), fstLeft.getY(), fstLeft.getZ(),
-                        sndLeft.getX(), sndLeft.getY(), sndLeft.getZ(),
-                        sndRight.getX(), sndRight.getY(), sndRight.getZ()
-                );
-
-                bottomRight.draw(gl, frame);
-                topLeft.draw(gl, frame);
+                points.add(fstLeft);
+                points.add(fstRight);
             }
         }
+
+        for (Point3D p : points)
+            textCoords.add(new Point2D(p.getX() / width, p.getZ() / width));
+
+        for (int i = 0; i < points.size() - 2; i += 2) {
+            indices.add(i);
+            indices.add(i + 2);
+            indices.add(i + 1);
+
+            indices.add(i + 1);
+            indices.add(i + 2);
+            indices.add(i + 3);
+        }
+
+        texture = new Texture(gl, "res/textures/rock.bmp", "bmp", true);
+
+        mesh = new TriangleMesh(points, indices, true, textCoords);
+        mesh.init(gl);
+    }
+
+    public void draw(GL3 gl, CoordFrame3D frame) {
+        Shader.setInt(gl, "tex", 1);
+        gl.glActiveTexture(GL.GL_TEXTURE1);
+        gl.glBindTexture(GL.GL_TEXTURE_2D, texture.getId());
+
+        mesh.draw(gl, frame);
     }
 
     /**
@@ -110,7 +132,7 @@ public class Road {
     }
     
     /**
-     * Get the number of segments in the curve
+     * Get the number of SEGMENTS in the curve
      * 
      * @return
      */
