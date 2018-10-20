@@ -6,7 +6,6 @@ import unsw.graphics.Shader;
 import unsw.graphics.geometry.*;
 
 import java.awt.*;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,9 +23,9 @@ public class Sun {
     public void init(GL3 gl) {
         List<Point3D> points = new ArrayList<>();
         for (int i = 0; i < VERTICES; i++) {
-            float a = (float) (i * Math.PI * 2 / VERTICES); // java.util.Math uses radians!!!
+            float a = (float) (i * Math.PI * 2 / VERTICES);
             float x = RADIUS * (float) Math.cos(a);
-            float y = RADIUS * ((float) Math.sin(a) + 1); // Off center
+            float y = RADIUS * ((float) Math.sin(a) + 1);
             Point3D p = new Point3D(x, y, 0);
             points.add(p);
         }

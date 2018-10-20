@@ -279,25 +279,26 @@ public class Terrain {
 
         if (thirdPerson) avatar.draw(gl);
 
+        if (sunMode) {
+            sun.draw(gl, view);
+
+            if (sunAltitude <= 0 || sunAltitude >= 6) sunRise = !sunRise;
+            if (sunRise) {
+                sunAltitude += 0.1;
+            } else {
+                sunAltitude -= 0.1;
+            }
+
+            if (sunAltitude < 0) {
+                setSunlightDir(-6, 0, 0);
+                sun.setPosition(-6, 0, 0);
+            } else {
+                setSunlightDir(sunlight.getX() + 0.17f, sunAltitude, sunlight.getZ());
+                sun.setPosition(sunlight.getX(), sunAltitude, sunlight.getZ());
+            }
+        }
+
         for (Road r : roads) r.draw(gl, view);
-
-        if (!sunMode) return;
-        sun.draw(gl, view);
-
-        if (sunAltitude <= 0 || sunAltitude >= 6) sunRise = !sunRise;
-        if (sunRise) {
-            sunAltitude += 0.1;
-        } else {
-            sunAltitude -= 0.1;
-        }
-
-        if (sunAltitude < 0) {
-            setSunlightDir(-6, 0, 0);
-            sun.setPosition(-6, 0, 0);
-        } else {
-            setSunlightDir(sunlight.getX() + 0.17f, sunAltitude, sunlight.getZ());
-            sun.setPosition(sunlight.getX(), sunAltitude, sunlight.getZ());
-        }
     }
 
     public Avatar getAvatar() {

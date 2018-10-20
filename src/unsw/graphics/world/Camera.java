@@ -73,7 +73,9 @@ public class Camera implements KeyListener {
                 break;
             case KeyEvent.VK_N:
                 nightMode = !nightMode;
+                thirdPesron = true;
                 terrain.setNightMode(nightMode);
+                terrain.setThirdPerson(true);
                 break;
             case KeyEvent.VK_S:
                 sunMode = !sunMode;
