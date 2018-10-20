@@ -9,8 +9,10 @@ import unsw.graphics.Shader;
 public class Camera implements KeyListener {
     private Terrain terrain;
 
+    // This preset gives a full front view of test1.json
     private float x = 4.5f;
     private float z = 15f;
+
     private float rotate;
 
     private boolean thirdPesron;
@@ -28,6 +30,7 @@ public class Camera implements KeyListener {
         float tempZ = z;
 
         if (thirdPesron) {
+            // pull camera backwards
             tempX += (float) Math.sin(Math.toRadians(rotate)) * 6;
             tempZ += (float) Math.cos(Math.toRadians(rotate)) * 6;
         }

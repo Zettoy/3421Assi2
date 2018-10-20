@@ -43,10 +43,15 @@ public class Road {
         List<Point2D> textCoords = new ArrayList<>();
 
         float dt = 1.0f/ SEGMENTS;
+
+        // altitute = altitute at the beginning of the road
         float y = terrain.altitude(this.points.get(0).getX(), this.points.get(0).getY()) + 0.01f;
 
+        // for spline curves
         for (int n = 0; n < size(); n ++) {
             List<Vector3> normals = new ArrayList<>();
+
+            // compute the normals at each point
             for (int i = 0; i <= SEGMENTS; i++) {
                 float fstT = i * dt + n;
                 float sndT = (i + 1) * dt + n;
@@ -75,6 +80,7 @@ public class Road {
                 normals.add(normal);
             }
 
+            // compute the points on each normal
             for (int i = 0; i <= SEGMENTS; i++) {
                 float fstT = i * dt + n;
                 Point2D fstPoint;
@@ -99,10 +105,12 @@ public class Road {
             textCoords.add(new Point2D(p.getX() / width, p.getZ() / width));
 
         for (int i = 0; i < points.size() - 2; i += 2) {
+            // top left triangle
             indices.add(i);
             indices.add(i + 2);
             indices.add(i + 1);
 
+            // bottom right triangle
             indices.add(i + 1);
             indices.add(i + 2);
             indices.add(i + 3);

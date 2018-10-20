@@ -129,6 +129,7 @@ public class Terrain {
         int z1 = z0 + 1;
         double altitude = 0;
 
+        // Bilinear interplotation
         if (x != x0 && z != z0) {
             double r1 = (x - x0) * getGridAltitude(x1, z0) + (x1 - x) * getGridAltitude(x0, z0);
             double r2 = (x - x0) * getGridAltitude(x1, z1) + (x1 - x) * getGridAltitude(x0, z1);
@@ -207,10 +208,12 @@ public class Terrain {
 
         for(int x = 0; x < width - 1; x ++) {
             for (int z = 0; z < depth - 1; z++) {
+                // top left triangle
                 indices.add(depth * x + z);
                 indices.add(depth * x + (z + 1));
                 indices.add(depth * (x + 1) + z);
 
+                // bottom right triangle
                 indices.add(depth * (x + 1) + z);
                 indices.add(depth * x + (z + 1));
                 indices.add(depth * (x + 1) + (z + 1));
@@ -248,6 +251,7 @@ public class Terrain {
 
         Shader.setPenColor(gl, Color.WHITE);
 
+        // sunlight direction
         Shader.setPoint3D(gl, "lightDir",
                 new Point3D(sunlight.getX(), sunlight.getY(), sunlight.getZ()));
         Shader.setColor(gl, "ambientIntensity", new Color(0.2f, 0.2f, 0.2f));
@@ -266,6 +270,7 @@ public class Terrain {
             Shader.setInt(gl, "nightMode", 0);
         }
 
+        // material
         Shader.setColor(gl, "ambientCoeff", Color.WHITE);
         Shader.setColor(gl, "diffuseCoeff", new Color(0.5f, 0.5f, 0.5f));
         Shader.setColor(gl, "specularCoeff", new Color(0.8f, 0.8f, 0.8f));

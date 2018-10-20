@@ -16,14 +16,15 @@ import unsw.graphics.geometry.Point2D;
 
 
 /**
- * COMMENT: Comment Game 
+ * Extentions:
  *
- * @author malcolmr
+ * Make the sun move and change colour according to the time of day (world/Sun.java, world/Terrain.java)
+ * Add distance attenuation to the torch light (fragment_tex_phong_assignment2.glsl)
+ *
  */
 public class World extends Application3D {
     private Terrain terrain;
     private Camera camera;
-    private int rotateY;
 
     public World(Terrain terrain) {
     	super("Assignment 2", 800, 600);
