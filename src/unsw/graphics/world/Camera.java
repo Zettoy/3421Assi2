@@ -33,7 +33,7 @@ public class Camera implements KeyListener {
         }
 
         CoordFrame3D view = CoordFrame3D.identity().rotateX(12)
-                .rotateX(78).translate(0, -10, 10)
+                //.rotateX(78).translate(0, -10, 10)
                 .rotateY(-rotate).translate(-tempX, -y, -tempZ);
         Shader.setViewMatrix(gl, view.getMatrix());
 
